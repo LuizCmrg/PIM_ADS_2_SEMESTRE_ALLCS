@@ -25,43 +25,43 @@ typedef struct {
 
 typedef struct {
     int horas_ultima_rev;
-    int saude_baterias;         // Ex: nível em porcentagem ou nota
-    char saude_helices[20];     // Ex: "Bom", "Trincado"
-    char saude_motores[20];     // Ex: "Normal", "Ruido"
-    char saude_camera[20];      // Ex: "Sim", "Nao"
-    char calibracao_gps[20];    // Ex: "Sim", "Nao"
-    char att_equip[20];         // Ex: "Sim", "Nao"
-    char limpeza_geral[20];     // Ex: "Sim", "Nao"
-    char aptidao_equipamento[20];// Ex: "Apto", "Inapto"
+    int saude_baterias;       
+    char saude_helices[20];    
+    char saude_motores[20];     
+    char saude_camera[20];      
+    char calibracao_gps[20];   
+    char att_equip[20];         
+    char limpeza_geral[20];     
+    char aptidao_equipamento[20];
 } ManutencaoDrone;
 
-// Retorna 1 se estiver NA garantia, e 0 se a garantia JÁ EXPIROU
+
 int verificarGarantia(const char* dataCompra, const char* dataAtual, int diasGarantia) {
     struct tm tm_compra = {0};
     struct tm tm_atual = {0};
 
-    // 1. Converte a string da data de compra para struct tm
+    
     sscanf(dataCompra, "%d/%d/%d", &tm_compra.tm_mday, &tm_compra.tm_mon, &tm_compra.tm_year);
-    tm_compra.tm_mon -= 1;     // Meses em C vão de 0 a 11
-    tm_compra.tm_year -= 1900; // Anos contam a partir de 1900
+    tm_compra.tm_mon -= 1;     
+    tm_compra.tm_year -= 2000; 
 
-    // 2. Converte a string da data atual para struct tm
+    
     sscanf(dataAtual, "%d/%d/%d", &tm_atual.tm_mday, &tm_atual.tm_mon, &tm_atual.tm_year);
     tm_atual.tm_mon -= 1;
-    tm_atual.tm_year -= 1900;
+    tm_atual.tm_year -= 2000;
 
-    // 3. Adiciona os dias de garantia na data de compra
+    
     tm_compra.tm_mday += diasGarantia;
 
-    // 4. Transforma ambas em segundos (time_t) - o mktime ajusta o calendário automaticamente
+    
     time_t tempo_limite = mktime(&tm_compra);
     time_t tempo_atual = mktime(&tm_atual);
 
-    // 5. Compara: se o tempo limite for maior ou igual ao atual, ainda está na garantia
+    
     if (tempo_atual <= tempo_limite) {
-        return 1; // Na garantia
+        return 1;
     } else {
-        return 0; // Garantia vencida
+        return 0; 
     }
 }
 
@@ -446,22 +446,21 @@ int main() {
                     int i = 0;
                     int encontrado_drone = -1;
 
-                    // Procura o drone pelo número de série no vetor
                     for(i = 0; i < estoque_drones; i++) {
                         if(strcmp(drone[i].drone_cadastro_numSerie, drone_numSerie_garantia) == 0) {
-                            encontrado_drone = i; // Guarda a posição (índice) do drone encontrado
+                            encontrado_drone = i; 
                             break;
                         }
                     }
 
-                    // Se encontrou o drone, faz a validação da garantia
+                    
                     if(encontrado_drone != -1) {
                         time_t t = time(NULL);
                         struct tm tm_sistema = *localtime(&t);
                         char data_hoje[15];
                         sprintf(data_hoje, "%02d/%02d/%d", tm_sistema.tm_mday, tm_sistema.tm_mon + 1, tm_sistema.tm_year + 1900);
                         
-                        int garantia_dias = 365; // Definido para 12 meses (365 dias)
+                        int garantia_dias = 365; 
 
                         printf("\n--- Drone Localizado ---\n");
                         printf("Modelo: %s | Série: %s\n", drone[encontrado_drone].drone_cadastro_modelo, drone[encontrado_drone].data_compra);
