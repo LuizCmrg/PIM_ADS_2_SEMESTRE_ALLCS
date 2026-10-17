@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 typedef struct {
     int id;
@@ -21,6 +22,48 @@ typedef struct {
     float drone_cadastro_horasvoo;
     char data_compra[50];
 } Drone;
+
+typedef struct {
+    int horas_ultima_rev;
+    int saude_baterias;         // Ex: nível em porcentagem ou nota
+    char saude_helices[20];     // Ex: "Bom", "Trincado"
+    char saude_motores[20];     // Ex: "Normal", "Ruido"
+    char saude_camera[20];      // Ex: "Sim", "Nao"
+    char calibracao_gps[20];    // Ex: "Sim", "Nao"
+    char att_equip[20];         // Ex: "Sim", "Nao"
+    char limpeza_geral[20];     // Ex: "Sim", "Nao"
+    char aptidao_equipamento[20];// Ex: "Apto", "Inapto"
+} ManutencaoDrone;
+
+// Retorna 1 se estiver NA garantia, e 0 se a garantia JÁ EXPIROU
+int verificarGarantia(const char* dataCompra, const char* dataAtual, int diasGarantia) {
+    struct tm tm_compra = {0};
+    struct tm tm_atual = {0};
+
+    // 1. Converte a string da data de compra para struct tm
+    sscanf(dataCompra, "%d/%d/%d", &tm_compra.tm_mday, &tm_compra.tm_mon, &tm_compra.tm_year);
+    tm_compra.tm_mon -= 1;     // Meses em C vão de 0 a 11
+    tm_compra.tm_year -= 1900; // Anos contam a partir de 1900
+
+    // 2. Converte a string da data atual para struct tm
+    sscanf(dataAtual, "%d/%d/%d", &tm_atual.tm_mday, &tm_atual.tm_mon, &tm_atual.tm_year);
+    tm_atual.tm_mon -= 1;
+    tm_atual.tm_year -= 1900;
+
+    // 3. Adiciona os dias de garantia na data de compra
+    tm_compra.tm_mday += diasGarantia;
+
+    // 4. Transforma ambas em segundos (time_t) - o mktime ajusta o calendário automaticamente
+    time_t tempo_limite = mktime(&tm_compra);
+    time_t tempo_atual = mktime(&tm_atual);
+
+    // 5. Compara: se o tempo limite for maior ou igual ao atual, ainda está na garantia
+    if (tempo_atual <= tempo_limite) {
+        return 1; // Na garantia
+    } else {
+        return 0; // Garantia vencida
+    }
+}
 
 int main() {
     int opcaoServicos_menu = 0;
@@ -62,7 +105,7 @@ int main() {
 
         switch (opcao_menu_principal) {
 
-            case 1:
+            case 1: {
                 printf("\n >>>>>> CADASTRO DE CLIENTES ALLCS <<<<<<\n");
 
                 printf("Digite o nome do cliente: ");
@@ -88,8 +131,9 @@ int main() {
             
                 totalCadastrados++;
                 break;
+            }
 
-            case 2:
+            case 2: {
                 printf("\n >>>>>> CADASTRO DE EQUIPAMENTOS ALLCS <<<<<<\n");
 
                 printf("\n Digite o modelo do Drone: \n  ");
@@ -209,6 +253,7 @@ int main() {
                 printf("\nDrone cadastrado com sucesso!!!\n");
                 estoque_drones++;
                 break;
+            }
 
             case 3: {
                 printf("\n >>>> CONSULTA <<<<<\n");
@@ -275,65 +320,62 @@ int main() {
                 }
                 else if (condicaoConsulta == 3){
                     int opcao_alter_cadastro = 0;
-                    int condicao_alter_cadastro = 0;
+                    int id_busca_alt = 0;
+                    
+                    printf("Digite o ID do cliente que deseja alterar: ");
+                    scanf("%d", &id_busca_alt);
 
-                    printf("Deseja alterar o cadastro do cliente?\n ");
-                    printf("Digite 1 para sim\n");
-                    printf("Digite 2 para não\n");
-                    scanf("%d", &condicao_alter_cadastro);
-                   
-                    if(condicao_alter_cadastro == 1){
-                        int id_busca_alt = 0;
-                        printf("Digite o ID do cliente que deseja alterar: ");
-                        scanf("%d", &id_busca_alt);
+                    int i;
+                    int achou_alt = -1;
+                    for(i = 0; i < totalCadastrados; i++){
+                        if(cliente[i].id == id_busca_alt){
+                            achou_alt = i;
+                            break;
+                        }
+                    }
 
-                        int i;
-                        int achou_alt = -1;
-                        for(i = 0; i < totalCadastrados; i++){
-                            if(cliente[i].id == id_busca_alt){
-                                achou_alt = i;
+                    if(achou_alt != -1){
+                        printf("Qual informação deseja alterar?\n");
+                        printf("1 - Nome\n");
+                        printf("2 - CPF\n");
+                        printf("3 - Email\n");
+                        printf("4 - Data de Nascimento\n");
+                        printf("5 - Endereco\n");
+                        printf("Digite sua opcao: ");
+                        scanf("%d", &opcao_alter_cadastro);
+
+                        switch(opcao_alter_cadastro){
+                            case 1:
+                                printf("Digite o novo nome: ");
+                                scanf(" %[^\n]", cliente[achou_alt].clienteCadastro_nome);
+                                printf("\n Nome atualizado com sucesso !!\n ");
                                 break;
-                            }
+                            case 2:
+                                printf("Digite o novo CPF: ");
+                                scanf("%s", cliente[achou_alt].clienteCadastro_cpf);
+                                printf("\n CPF atualizado com sucesso !!\n ");
+                                break;
+                            case 3:
+                                printf("Digite o novo email: ");
+                                scanf("%s", cliente[achou_alt].clienteCadastro_email);
+                                printf("\n Email atualizado com sucesso !!\n ");
+                                break;
+                            case 4:
+                                printf("Digite a nova data de nascimento: ");
+                                scanf("%s", cliente[achou_alt].clienteCadastro_dataNascimento);
+                                printf("\n Data atualizada com sucesso !!\n ");
+                                break;
+                            case 5:
+                                printf("Digite o novo endereço: ");
+                                scanf(" %[^\n]", cliente[achou_alt].clienteCadastro_endereco);
+                                printf("\n Endereço atualizado com sucesso !!\n ");
+                                break;
+                            default:
+                                printf("Opção inválida!\n");
+                                break;
                         }
-
-                        if(achou_alt != -1){
-                            printf("Qual informação deseja alterar?\n");
-                            printf("1 - Nome\n");
-                            printf("2 - CPF\n");
-                            printf("3 - Email\n");
-                            printf("4 - Data de Nascimento\n");
-                            printf("5 - Endereco\n");
-                            printf("Digite sua opcao: ");
-                            scanf("%d", &opcao_alter_cadastro);
-
-                            switch(opcao_alter_cadastro){
-                                case 1:
-                                    printf("Digite o novo nome: ");
-                                    scanf("%[^\n]", cliente[achou_alt].clienteCadastro_nome);
-                                    break;
-                                case 2:
-                                    printf("Digite o novo CPF: ");
-                                    scanf("%s", cliente[achou_alt].clienteCadastro_cpf);
-                                    break;
-                                case 3:
-                                    printf("Digite o novo email: ");
-                                    scanf("%s", cliente[achou_alt].clienteCadastro_email);
-                                    break;
-                                case 4:
-                                    printf("Digite a nova data de nascimento: ");
-                                    scanf("%s", cliente[achou_alt].clienteCadastro_dataNascimento);
-                                    break;
-                                case 5:
-                                    printf("Digite o novo endereço: ");
-                                    scanf(" %[^\n]", cliente[achou_alt].clienteCadastro_endereco);
-                                    break;
-                                default:
-                                    printf("Opção inválida!\n");
-                                    break;
-                            }
-                        } else {
-                            printf("Cliente com ID não encontrado!\n");
-                        }
+                    } else {
+                        printf("Cliente com ID não encontrado!\n");
                     }
                 }
                 break;
@@ -356,26 +398,84 @@ int main() {
                     int i = 0;
                     for(i = 0; i < estoque_drones; i++) {
                         if(strcmp(drone[i].drone_cadastro_numSerie, drone_numSerie_manut) == 0) {
+                            
                             printf("\n ---Drone localizado ---\n ");
                             printf("Ordem serviço gerada: %s\n", drone_numSerie_manut);
                             printf("Preencha o formulário de Manutenção para ordem de serviço. \n");
                             printf("--- FORMULÁRIO DE MANUTENÇÃO DE DRONE ---\n\n");
-                            printf("Drone: Qual o modelo do drone?\n");
+                            ManutencaoDrone novaManutencao;
+
                             printf("Horas: Quantas horas de voo desde a última revisão?\n");
-                            printf("Baterias: Qual o nível atual de integridade das baterias?\n");
+                            scanf("%d", &novaManutencao.horas_ultima_rev);
+
+                            printf("Baterias: Qual o nível atual de integridade das baterias (%%)?\n");
+                            scanf("%d", &novaManutencao.saude_baterias);
+
                             printf("Hélice: Há trincas ou desgaste nas hélices?\n");
+                            scanf(" %[^\n]", novaManutencao.saude_helices);
+
                             printf("Motores: Os motores apresentam ruídos ou vibrações anormais?\n");
+                            scanf(" %[^\n]", novaManutencao.saude_motores);
+
                             printf("Câmera: O gimbal e a câmera estão funcionando perfeitamente?\n");
+                            scanf(" %[^\n]", novaManutencao.saude_camera);
+
                             printf("GPS: O sinal de GPS e a bússola foram calibrados?\n");
+                            scanf(" %[^\n]", novaManutencao.calibracao_gps);
+
                             printf("Firmware: O firmware e os aplicativos estão atualizados?\n");
+                            scanf(" %[^\n]", novaManutencao.att_equip);
+
                             printf("Limpeza: Foi feita a limpeza de poeira e resíduos?\n");
+                            scanf(" %[^\n]", novaManutencao.limpeza_geral);
+
                             printf("Status: O drone está apto para o próximo voo?\n");
+                            scanf(" %[^\n]", novaManutencao.aptidao_equipamento);
+
+                            printf("\nManutenção preenchida e registrada com sucesso!\n");
+                        }   
+                    }
+                } 
+                else if (opcaoServicos == 2) {
+                    printf("\n SERVIÇOS -- VERIFICAÇÃO DE GARANTIA \n");
+                    printf("Digite o número de série do equipamento que deseja consultar a garantia: ");
+                    
+                    char drone_numSerie_garantia[50];
+                    scanf("%s", drone_numSerie_garantia);
+
+                    int i = 0;
+                    int encontrado_drone = -1;
+
+                    // Procura o drone pelo número de série no vetor
+                    for(i = 0; i < estoque_drones; i++) {
+                        if(strcmp(drone[i].drone_cadastro_numSerie, drone_numSerie_garantia) == 0) {
+                            encontrado_drone = i; // Guarda a posição (índice) do drone encontrado
+                            break;
                         }
                     }
-                } else if (opcaoServicos == 2) {
-                    printf("Acionando a garantia...\n");
 
-                } else if (opcaoServicos == 3) {
+                    // Se encontrou o drone, faz a validação da garantia
+                    if(encontrado_drone != -1) {
+                        time_t t = time(NULL);
+                        struct tm tm_sistema = *localtime(&t);
+                        char data_hoje[15];
+                        sprintf(data_hoje, "%02d/%02d/%d", tm_sistema.tm_mday, tm_sistema.tm_mon + 1, tm_sistema.tm_year + 1900);
+                        
+                        int garantia_dias = 365; // Definido para 12 meses (365 dias)
+
+                        printf("\n--- Drone Localizado ---\n");
+                        printf("Modelo: %s | Série: %s\n", drone[encontrado_drone].drone_cadastro_modelo, drone[encontrado_drone].data_compra);
+
+                        if (verificarGarantia(drone[encontrado_drone].data_compra, data_hoje, garantia_dias)) {
+                            printf("Status: O equipamento AINDA ESTÁ na garantia!\n");
+                        } else {
+                            printf("Status: A garantia deste equipamento já expirou.\n");
+                        }
+                    } else {
+                        printf("\n[Aviso]: Nenhum drone com o número de série '%s' foi encontrado no sistema.\n", drone_numSerie_garantia);
+                    }
+                } 
+                else if (opcaoServicos == 3) {
                     printf("\n>>>>> - SERVIÇOS ALLCS - <<<<<\n");
                     printf("Deseja um serviço de filmagem e fotografia? Digite 1:\n");
                     printf("Deseja um serviço de espetáculo de drones? Digite 2:\n");
